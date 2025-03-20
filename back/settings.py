@@ -7,7 +7,11 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALLOWED_HOSTS = ["sternhalma.onrender.com", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "sternhalma.onrender.com",
+    "127.0.0.1",
+    "cchecker-backend.onrender.com",
+]
 
 INSTALLED_APPS = [
     "daphne",
