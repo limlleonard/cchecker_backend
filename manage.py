@@ -18,7 +18,7 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-# uvicorn back.asgi:application --host 0.0.0.0 --port $PORT
+# uvicorn back.asgi:application --host 0.0.0.0 --port 8000
 
 if __name__ == "__main__":
     main()
