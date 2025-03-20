@@ -7,7 +7,7 @@ from . import views
 # router.register(r'score', views.ViewsetScore)
 
 urlpatterns = [
-    # path("", views.home, name="home"),
+    path("", views.index, name="index"),
     path("return_board/", views.return_board, name="return_board"),
     path("starten/", views.starten, name="starten"),
     path("reset/", views.reset, name="reset"),

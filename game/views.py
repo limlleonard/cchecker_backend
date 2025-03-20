@@ -11,7 +11,7 @@ from rest_framework.decorators import (
     api_view,
     renderer_classes,
 )  # action, update database
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 # from django.views.decorators.csrf import csrf_exempt
 from .game import Game, Board
@@ -23,8 +23,8 @@ dct_game = {}
 roomnr = 0
 
 
-# def home(request):
-#     return render(request, "index.html")  # from react build
+def index(request):
+    return HttpResponse("Homepage")
 
 
 def return_board(request):
