@@ -12,6 +12,9 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "cchecker-backend.onrender.com",
 ]
+render_external_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_external_hostname:
+    ALLOWED_HOSTS.append(render_external_hostname)
 
 INSTALLED_APPS = [
     "daphne",

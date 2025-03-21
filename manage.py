@@ -19,6 +19,7 @@ def main():
 
 
 # uvicorn back.asgi:application --host 0.0.0.0 --port 8000
+# test if there is any socket connected for the roomnr
 
 if __name__ == "__main__":
     main()
