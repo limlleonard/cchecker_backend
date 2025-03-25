@@ -1,11 +1,4 @@
 import json
-
-# import pickle
-# import base64
-from django.shortcuts import render
-
-# from rest_framework import viewsets, status # class view
-# from rest_framework.renderers import JSONRenderer  # class view
 from rest_framework.response import Response  # update database
 from rest_framework.decorators import (
     api_view,
@@ -13,7 +6,6 @@ from rest_framework.decorators import (
 )  # action, update database
 from django.http import JsonResponse, HttpResponse
 
-# from django.views.decorators.csrf import csrf_exempt
 from .game import Game, Board
 from .models import Score, Game_state
 from .serializers import SerializerScore
@@ -24,7 +16,7 @@ roomnr = 0
 
 
 def index(request):
-    return HttpResponse("Homepage")
+    return HttpResponse("Homepage. Please play the game from the frontend")
 
 
 def return_board(request):
@@ -47,7 +39,7 @@ def starten(request):
                 {"exist": True, "ll_piece": dct_game[roomnr].get_ll_piece()}
             )
     except Exception as e:
-        print(e)
+        print("Error by starting the game: ", e)
         return Response({"error": "Invalid input"}, status=400)
 
 
@@ -61,7 +53,7 @@ def reset(request):
         # game_state.delete()
         return Response({"ok": True})
     except Exception as e:
-        print(e)
+        print("Error by reseting the game", e)
         return Response({"ok": False}, status=400)
 
 
@@ -89,30 +81,6 @@ def klicken(request):
         )
     except (TypeError, ValueError):
         return Response({"error": "Invalid JSON data"}, status=400)
-
-
-@api_view(["GET"])
-# @renderer_classes([JSONRenderer])  # Ensure response is JSON
-def get_score(request):
-    scores = Score.objects.all().order_by("score")[:5]
-    serializer = SerializerScore(scores, many=True)  # serializing multiple object
-    return Response(serializer.data)
-
-
-@api_view(["POST"])
-# @renderer_classes([JSONRenderer])
-def add_score(request):
-    score = request.data.get("score")
-    name = request.data.get("name")
-
-    if not score or not name or len(name) > 20:
-        return Response({"error": "Invalid input"}, status=400)
-    Score.objects.create(score=score, name=name)
-    scores = Score.objects.all().order_by("score")
-    if scores.count() > 5:
-        scores.last().delete()
-
-    return Response({"success": "Score added"}, status=201)
 
 
 @api_view(["POST"])
@@ -160,6 +128,36 @@ def backend_info(request):
     return Response({"lst_roomnr": dct_game.keys(), "lst_roomnr_db": lst_roomnr_db})
 
 
+@api_view(["GET"])
+# @renderer_classes([JSONRenderer])  # Ensure response is JSON
+def get_score(request):
+    scores = Score.objects.all().order_by("score")[:5]
+    serializer = SerializerScore(scores, many=True)  # serializing multiple object
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+# @renderer_classes([JSONRenderer])
+def add_score(request):
+    score = request.data.get("score")
+    name = request.data.get("name")
+
+    if not score or not name or len(name) > 20:
+        return Response({"error": "Invalid input"}, status=400)
+    Score.objects.create(score=score, name=name)
+    scores = Score.objects.all().order_by("score")
+    if scores.count() > 5:
+        scores.last().delete()
+
+    return Response({"success": "Score added"}, status=201)
+
+
+# import pickle
+# import base64
+# from django.shortcuts import render
+# from rest_framework import viewsets, status # class view
+# from rest_framework.renderers import JSONRenderer  # class view
+# from django.views.decorators.csrf import csrf_exempt
 # class ViewsetScore(viewsets.ModelViewSet):
 #     queryset = Score.objects.all().order_by('score')[:5]
 #     serializer_class = SerializerScore

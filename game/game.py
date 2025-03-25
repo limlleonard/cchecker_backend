@@ -13,6 +13,7 @@ def rotate_point(
     pc: tuple[int, int], p1: tuple[int, int], nr_angle: int
 ) -> tuple[int, int]:
     """
+    Not used yet
     Rotate one point (p1) a certain angle around another point (pc). In the game, it should only rotate 60*nr_angle degree. nr_angle should be a int between 0-5
     Args:
         pc (tuple[int,int]): center point.
@@ -42,10 +43,8 @@ class Board:
         (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
         lst_board, lst_board_round saves the coord of all positions in the same order"""
         self.dct_board = self.init_dict()
-        self.lst_board = [self.dct_board[a1] for a1 in self.dct_board]
-        self.lst_board_int = [
-            (round(coord[0]), round(coord[1])) for coord in self.lst_board
-        ]
+        self.lst_board = list(self.dct_board.values())
+        self.lst_board_int = [(round(x), round(y)) for x, y in self.lst_board]
 
     def init_dict(self) -> dict:
         dct_board = {}
@@ -57,7 +56,7 @@ class Board:
             for direction in range(6):
                 angle1 = (direction * 2 * pi) / 6
                 x1, y1 = CENTERX + r1 * cos(angle1), CENTERY + r1 * sin(angle1)
-                # fantacy next point to calculate the coordinate of points in between
+                # calculate the fantacy "next point" first to calculate the coordinate of points in between
                 angle2 = ((direction + 1) * 2 * pi) / 6
                 x2, y2 = CENTERX + r1 * cos(angle2), CENTERY + r1 * sin(angle2)
                 if nr_skip < 1:  # inside the middle layer
@@ -80,7 +79,7 @@ class Player:
         """
         Args:
             init_dir: int: initial direction 0-5. (In which corner does it start playing)
-            state: save lst_piece and lst_target
+            state: saved lst_piece and lst_target, used to reload a player
         """
         if state is not None:
             self.lst_piece = [tuple(coord) for coord in state[0]]
@@ -153,6 +152,8 @@ class Game:
             5: [1, 3, 5, 2, 4],
             6: [1, 3, 5, 2, 4, 6],
         }  # depending on nr of players, the position of each player
+        if not isinstance(nr_player, int) or not isinstance(roomnr, int):
+            raise TypeError("nr_player and roomnr must be an integer.")
         if nr_player > 0 and state_players is None:
             self.order = 0  # who is in turn
             self.players = []
@@ -281,7 +282,7 @@ class Game:
                 rotate_point((CENTERX, CENTERY), p1, nr_angle)
                 for p1 in player_new.lst_target
             ]
-            player_new.lst_target_round = [
+            player_new.lst_target_int = [
                 (round(coord[0]), round(coord[1])) for coord in player_new.lst_target
             ]
         return player_rotate

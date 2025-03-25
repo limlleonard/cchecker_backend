@@ -1,6 +1,8 @@
-# Sternhalma / Chinese Checker
+# Chinese Checker Backend
 ## Description
 [Link to play the game](https://sternhalma.onrender.com)
+
+[Link to frontend code](https://github.com/limlleonard/cchecker_frontend)
 
 Chinese Checker is a popular strategy board game in China, it was also my favorite game in my school time. It can be played by 1-6 person. The player try to move all the 10 pieces to the opposite corner of the board. One piece could be moved to an adjacent field or jump over ONE other piece once or for more times, but not jump over more than one piece.
 

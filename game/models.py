@@ -18,3 +18,6 @@ class Game_state(models.Model):
     order = models.IntegerField()
     roomnr = models.IntegerField(unique=True)
     state_players = models.JSONField()
+
+    def __str__(self):
+        return f"Game_state {self.roomnr}"
