@@ -7,7 +7,7 @@ from rest_framework.decorators import (
 from django.http import JsonResponse, HttpResponse
 
 from .game import Game, Board
-from .models import Score, Game_state
+from .models import Score, GameState
 from .serializers import SerializerScore
 
 board1 = Board()  # to initialize board when the game is loaded for the first time
@@ -90,7 +90,7 @@ def save_state(request):
         dct_game[roomnr].save_state()
         return Response({"message": "game saved"}, status=201)
     else:
-        return Response({"message": "game not saved"}, status=201)
+        return Response({"message": "game not saved"}, status=200)
 
 
 @api_view(["GET"])
@@ -98,7 +98,7 @@ def reload_state(request):
     """Search in DB, if exist return"""
     # roomnr = int(request.data.get("roomnr", 0))
     roomnr = int(request.GET.get("roomnr"))
-    raw_states = Game_state.objects.filter(roomnr=roomnr)
+    raw_states = GameState.objects.filter(roomnr=roomnr)
     lst_state = list(raw_states.values("order", "roomnr", "state_players"))
     if not raw_states.exists():
         return Response({"exist": False})
@@ -124,8 +124,10 @@ def reload_state(request):
 @api_view(["GET"])
 def backend_info(request):
     """Return backend information"""
-    lst_roomnr_db = Game_state.objects.values_list("roomnr", flat=True).distinct()
-    return Response({"lst_roomnr": dct_game.keys(), "lst_roomnr_db": lst_roomnr_db})
+    lst_roomnr_db = GameState.objects.values_list("roomnr", flat=True).distinct()
+    return Response(
+        {"lst_roomnr_taken": dct_game.keys(), "lst_roomnr_saved": lst_roomnr_db}
+    )
 
 
 @api_view(["GET"])

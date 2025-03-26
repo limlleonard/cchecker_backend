@@ -14,10 +14,10 @@ class Board(models.Model):
     float1 = models.FloatField()
 
 
-class Game_state(models.Model):
+class GameState(models.Model):
     order = models.IntegerField()
     roomnr = models.IntegerField(unique=True)
     state_players = models.JSONField()
 
     def __str__(self):
-        return f"Game_state {self.roomnr}"
+        return f"GameState {self.roomnr}"

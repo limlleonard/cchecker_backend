@@ -1,5 +1,5 @@
 from math import pi, cos, sin
-from .models import Game_state
+from .models import GameState
 
 width_board, height_board = 720, 720
 CENTERX, CENTERY = width_board / 2, height_board / 2
@@ -289,8 +289,8 @@ class Game:
 
     def save_state(self) -> None:
         state_players = [p1.get_state() for p1 in self.players]
-        Game_state.objects.filter(roomnr=self.roomnr).delete()
-        Game_state.objects.create(
+        GameState.objects.filter(roomnr=self.roomnr).delete()
+        GameState.objects.create(
             order=self.order, roomnr=self.roomnr, state_players=state_players
         )
 
