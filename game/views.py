@@ -49,8 +49,8 @@ def reset(request):
     try:
         roomnr = int(request.data.get("roomnr", 0))
         del dct_game[int(roomnr)]
-        # game_state = Game_state.objects.get(roomnr=roomnr)
-        # game_state.delete()
+        game_state = GameState.objects.get(roomnr=roomnr)
+        game_state.delete()
         return Response({"ok": True})
     except Exception as e:
         print("Error by reseting the game", e)
@@ -122,11 +122,16 @@ def reload_state(request):
 
 
 @api_view(["GET"])
-def backend_info(request):
+def room_info(request):
     """Return backend information"""
-    lst_roomnr_db = GameState.objects.values_list("roomnr", flat=True).distinct()
+    lst_roomnr_saved = list(
+        GameState.objects.values_list("roomnr", flat=True)
+    )  # .distinct()
+    lst_roomnr_saved.sort()
+    lst_roomnr_taken = list(dct_game.keys())
+    lst_roomnr_taken.sort()
     return Response(
-        {"lst_roomnr_taken": dct_game.keys(), "lst_roomnr_saved": lst_roomnr_db}
+        {"lst_roomnr_taken": lst_roomnr_taken, "lst_roomnr_saved": lst_roomnr_saved}
     )
 
 

@@ -2,7 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from urllib.parse import parse_qs
 
-# from .views import dct_game
+from .views import dct_game
 
 
 class Game1(AsyncWebsocketConsumer):
@@ -15,8 +15,8 @@ class Game1(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         print(f"disconnect, {self.roomnr}")
-        # if int(self.roomnr) in dct_game:
-        #     del dct_game[int(self.roomnr)]
+        if int(self.roomnr) in dct_game:
+            del dct_game[int(self.roomnr)]
         await self.channel_layer.group_discard(self.roomnr, self.channel_name)
 
     async def receive(self, text_data):

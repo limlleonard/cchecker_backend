@@ -19,5 +19,5 @@ urlpatterns = [
     path("add_score/", views.add_score, name="add_score"),
     path("save_state/", views.save_state, name="save_state"),
     path("reload_state/", views.reload_state, name="reload_state"),
-    path("backend_info/", views.backend_info, name="backend_info"),
+    path("room_info/", views.room_info, name="room_info"),
 ]
