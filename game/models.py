@@ -21,3 +21,14 @@ class GameState(models.Model):
 
     def __str__(self):
         return f"GameState {self.roomnr}"
+
+
+class GameStateTemp(models.Model):
+    selected = models.JSONField(null=True, blank=True)
+    valid_pos = models.JSONField(null=True, blank=True)
+    order = models.IntegerField()
+    roomnr = models.IntegerField(unique=True)
+    state_players = models.JSONField()
+
+    def __str__(self):
+        return f"GameStateTemp {self.roomnr}"

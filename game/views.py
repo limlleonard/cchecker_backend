@@ -7,7 +7,7 @@ from rest_framework.decorators import (
 from django.http import JsonResponse, HttpResponse
 
 from .game import Game, Board
-from .models import Score, GameState
+from .models import Score, GameState, GameStateTemp
 from .serializers import SerializerScore
 
 board1 = Board()  # to initialize board when the game is loaded for the first time
@@ -31,6 +31,14 @@ def starten(request):
         roomnr = int(request.data.get("roomnr", 0))
         if roomnr not in dct_game:
             dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
+            # try to save GameStateTemp
+            GameStateTemp.objects.create(
+                selected=None,
+                valid_pos=None,
+                order=0,
+                roomnr=roomnr,
+                state_players=dct_game[roomnr].get_ll_piece(),
+            )
             return Response(
                 {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
             )
@@ -61,14 +69,15 @@ def reset(request):
 @api_view(["POST"])  # DRF handles JSON & CSRF protection
 def klicken(request):
     try:
-        coord_round = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
+        coord_int = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
         roomnr = int(request.data.get("roomnr", 0))
         # game1 = pickle.loads(
         #     base64.b64decode(request.session.get("game").encode("utf-8"))
         # )
         selected, valid_pos, neue_figuren, order, gewonnen = dct_game[roomnr].klicken(
-            coord_round
+            coord_int
         )
+        # data1=dct_game[roomnr].click1(coord_int, dct_game[roomnr])
         # request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
         return Response(
             {

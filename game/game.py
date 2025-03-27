@@ -73,6 +73,14 @@ class Board:
                         dct_board[(nr_layer, direction, nr_circle_layer)] = (x3, y3)
         return dct_board
 
+    def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
+        """
+        Args: coord_int
+        Returns: coord_float
+        find the index in lst_board_int, then return the value from lst_board since they have the same order
+        """
+        return self.lst_board[self.lst_board_int.index(coord_int)]
+
 
 class Player:
     def __init__(self, init_dir=1, state: list | None = None):
@@ -139,7 +147,11 @@ class Player:
 
 class Game:
     def __init__(
-        self, roomnr=0, nr_player=0, state_players: list | None = None, order=0
+        self,
+        roomnr=0,
+        nr_player=0,
+        state_players: list[list[tuple[int, int]]] | None = None,
+        order=0,
     ):
         """game will be either initialized from 0 or from a given state"""
         self.board = Board()
@@ -169,13 +181,9 @@ class Game:
             )
             raise Exception("Given vars cannot create a new game")
 
-    def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
-        """find the index in lst_board_int, then return the value from lst_board since they have the same order"""
-        return self.board.lst_board[self.board.lst_board_int.index(coord_int)]
-
     def find_neighbors(self, coord_int: tuple[int, ...]) -> tuple[int, ...]:
         """6 positions around the figure + 6 positionen over them"""
-        x, y = self.get_precise_coord(coord_int)
+        x, y = self.board.get_precise_coord(coord_int)
         lst_neighbor = []
         for i in range(6):
             angle = i * 2 * pi / 6
@@ -192,6 +200,13 @@ class Game:
         """get a list (players) of list (pieces)"""
         ll_piece = []  # Figuren aller Farben berückwichtigen
         for player1 in self.players:
+            ll_piece.append(player1.lst_piece_int)
+        return ll_piece
+
+    def get_ll_piece1(self, players: list[Player]) -> list[list[tuple[int, int]]]:
+        """get a list (players) of list (pieces)"""
+        ll_piece = []  # Figuren aller Farben berückwichtigen
+        for player1 in players:
             ll_piece.append(player1.lst_piece_int)
         return ll_piece
 
@@ -230,6 +245,63 @@ class Game:
         dfs(coord_int)
         return valid_pos
 
+    def click1(
+        self,
+        coord_int: tuple[int, int],
+        state_players: list[list[tuple[int, int]]],
+        order: int,
+    ) -> tuple[
+        tuple[int, int] | None,
+        list[tuple[int, int]] | None,
+        list[list[tuple[int, int]]] | None,
+        int,
+        bool,
+    ]:
+        """Args:
+        coord_int: coordinate clicked
+        state_players: coordinates of all players, get from DB probably
+        Returns:
+        selected: coordinate of the selected piece
+        valid_position: coordinates of valid positions to move to
+        new_pieces: the same as state_players, in case a piece is moved, otherwise none
+        order: int to indicate who is in turn
+        gewonnen: win?
+        """
+        new_pieces = None
+        players = [Player(state=state) for state in state_players]
+        player_inturn = players[order]
+        if coord_int in player_inturn.lst_piece_int:  # click on a piece
+            player_inturn.valid_pos = self.find_valid_pos(coord_int)
+            if (
+                len(player_inturn.valid_pos) > 0
+            ):  # you can only select a piece, that can be moved
+                player_inturn.selected = coord_int
+        elif (
+            player_inturn.selected and coord_int in player_inturn.valid_pos
+        ):  # click on a field
+            # move piece, pop the old piece and insert the new piece
+            index_from = player_inturn.lst_piece_int.index(player_inturn.selected)
+            player_inturn.lst_piece_int.pop(index_from)
+            player_inturn.lst_piece.pop(index_from)
+            player_inturn.lst_piece_int.append(coord_int)
+            player_inturn.lst_piece.append(self.board.get_precise_coord(coord_int))
+            player_inturn.selected = None
+            player_inturn.valid_pos = []
+            player_inturn.win_check()
+            order = (order + 1) % len(players)
+            new_pieces = (
+                self.get_ll_piece1()
+            )  # if new_figures is not none, it means a piece is moved
+        else:
+            print("Invalid move", coord_int, players.lst_piece_int)
+        return (
+            player_inturn.selected,
+            player_inturn.valid_pos,
+            new_pieces,
+            order,
+            player_inturn.gewonnen,
+        )
+
     def klicken(self, coord_int: tuple[int, int]):
         """klicking on a piece or a field,"""
         new_figures = None
@@ -247,7 +319,7 @@ class Game:
             players.lst_piece_int.pop(index_from)
             players.lst_piece.pop(index_from)
             players.lst_piece_int.append(coord_int)
-            players.lst_piece.append(self.get_precise_coord(coord_int))
+            players.lst_piece.append(self.board.get_precise_coord(coord_int))
             # coord_to=coord_round
             players.selected = None
             players.valid_pos = []
@@ -257,7 +329,7 @@ class Game:
                 self.get_ll_piece()
             )  # if new_figures is not none, it means a piece is moved
         else:
-            print(coord_int, players.lst_piece_int)
+            print("Invalid move", coord_int, players.lst_piece_int)
         return (
             players.selected,
             players.valid_pos,
@@ -267,7 +339,7 @@ class Game:
         )
 
     def get_rotate_player(self, nr_angle: int):
-        """Rotate all the player and return them"""
+        """Not used yet. Rotate all the player and return them"""
         player_rotate = []
         for player_old in self.players:
             player_new = player_old.copy()
