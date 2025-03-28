@@ -9,13 +9,8 @@ class Score(models.Model):
         return f"{self.name}: {self.score}"
 
 
-class Board(models.Model):
-    int1 = models.IntegerField()
-    float1 = models.FloatField()
-
-
 class GameState(models.Model):
-    order = models.IntegerField()
+    turnwise = models.IntegerField()
     roomnr = models.IntegerField(unique=True)
     state_players = models.JSONField()
 
@@ -23,12 +18,37 @@ class GameState(models.Model):
         return f"GameState {self.roomnr}"
 
 
-class GameStateTemp(models.Model):
-    selected = models.JSONField(null=True, blank=True)
-    valid_pos = models.JSONField(null=True, blank=True)
-    order = models.IntegerField()
+class GameState3(models.Model):
     roomnr = models.IntegerField(unique=True)
-    state_players = models.JSONField()
+    playernr = models.IntegerField(default=1)
+    turnwise = models.IntegerField(default=0)
+    movenr = models.IntegerField(default=0)
+    selected = models.JSONField(null=True, blank=True, default=None)
+    valid_pos = models.JSONField(null=True, blank=True, default=None)
 
     def __str__(self):
         return f"GameStateTemp {self.roomnr}"
+
+
+class Moves1(models.Model):
+    roomnr = models.IntegerField(unique=True)
+    movenr = models.IntegerField(default=0)
+    coord_from = models.JSONField()
+    coord_to = models.JSONField()
+
+    def __str__(self):
+        return f"Move - {self.roomnr} - {self.movenr}"
+
+
+def get_ll_pieces(roomnr, movenr, game1):
+    state = GameState3.objects.get(roomnr=roomnr)
+    moves = Moves1.objects.filter(roomnr=roomnr)
+    ll_pieces = game1.init_state(state.playernr)
+    for movenr in range(state.movenr):
+        move1 = moves.filter(movenr=movenr).first()
+        for lst_pieces in ll_pieces:
+            if tuple(move1.coord_from) in lst_pieces:
+                index_from = lst_pieces.index(tuple(move1.coord_from))
+                lst_pieces.pop(index_from)
+                lst_pieces.append(list(move1.coord_to))
+    return ll_pieces

@@ -72,16 +72,16 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "bjv43dmw65b7obui857u",
-        "USER": "uwss14x03ljxhvrjdqvo",
-        "PASSWORD": os.environ.get("DB_PASSWORD"),  # on render
-        "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
-        "PORT": "50013",
-    }
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "bjv43dmw65b7obui857u",
+#         "USER": "uwss14x03ljxhvrjdqvo",
+#         "PASSWORD": os.environ.get("DB_PASSWORD"),  # on render
+#         "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
+#         "PORT": "50013",
+#     }
+# }
 
 
 AUTH_PASSWORD_VALIDATORS = [

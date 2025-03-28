@@ -6,12 +6,13 @@ from rest_framework.decorators import (
 )  # action, update database
 from django.http import JsonResponse, HttpResponse
 
-from .game import Game, Board
-from .models import Score, GameState, GameStateTemp
+from .game import Game, Board, GameStateless
+from .models import *
 from .serializers import SerializerScore
 
 board1 = Board()  # to initialize board when the game is loaded for the first time
 dct_game = {}
+game1 = GameStateless()
 roomnr = 0
 
 
@@ -27,17 +28,13 @@ def return_board(request):
 def starten(request):
     """this should start game. Front should send nr_player here and reset game"""
     try:
-        nr_player = int(request.data.get("nrPlayer", 0))
+        playernr = int(request.data.get("nrPlayer", 0))
         roomnr = int(request.data.get("roomnr", 0))
         if roomnr not in dct_game:
-            dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
-            # try to save GameStateTemp
-            GameStateTemp.objects.create(
-                selected=None,
-                valid_pos=None,
-                order=0,
+            dct_game[roomnr] = Game(nr_player=playernr, roomnr=roomnr)
+            GameState3.objects.update_or_create(
                 roomnr=roomnr,
-                state_players=dct_game[roomnr].get_ll_piece(),
+                defaults={"playernr": playernr},
             )
             return Response(
                 {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
@@ -56,12 +53,17 @@ def reset(request):
     """Remove the instance from dct_game and the saved game in db"""
     try:
         roomnr = int(request.data.get("roomnr", 0))
-        del dct_game[int(roomnr)]
-        game_state = GameState.objects.get(roomnr=roomnr)
-        game_state.delete()
+        if int(roomnr) in dct_game:
+            del dct_game[int(roomnr)]
+        game_state = GameState.objects.filter(roomnr=roomnr)
+        if game_state.exists():
+            game_state.delete()
+        game_state1 = GameState1.objects.filter(roomnr=roomnr)
+        if game_state1.exists():
+            game_state1.delete()
         return Response({"ok": True})
     except Exception as e:
-        print("Error by reseting the game", e)
+        print("Error by reseting the game: ", e)
         return Response({"ok": False}, status=400)
 
 
@@ -69,16 +71,61 @@ def reset(request):
 @api_view(["POST"])  # DRF handles JSON & CSRF protection
 def klicken(request):
     try:
-        coord_int = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
+        coord_int = [int(request.data.get("xr", 0)), int(request.data.get("yr", 0))]
         roomnr = int(request.data.get("roomnr", 0))
-        # game1 = pickle.loads(
-        #     base64.b64decode(request.session.get("game").encode("utf-8"))
-        # )
+        movenr = int(request.data.get("movenr", 0))
+
+        # selected is None means it is waiting for clicking on a piece
+        try:
+            state = GameState3.objects.get(roomnr=roomnr)
+        except GameState3.DoesNotExist:
+            print("Game should have been created but not exist")
+        if state.selected is None:
+            # selected and valid_pos must be none or not none at the same time
+            # print(get_ll_pieces(roomnr, movenr, game1))
+            valid_pos1 = game1.click_piece(
+                coord_int, state.turnwise, get_ll_pieces(roomnr, movenr, game1)
+            )
+            if valid_pos1:
+                selected1 = coord_int
+                GameState3.objects.update_or_create(
+                    roomnr=roomnr,
+                    defaults={
+                        "selected": selected1,
+                        "valid_pos": valid_pos1,
+                    },
+                )
+        else:
+            # a piece is alread selected, now make the move
+            if list(coord_int) in state.valid_pos:
+                GameState3.objects.update_or_create(
+                    roomnr=roomnr,
+                    defaults={
+                        "selected": None,
+                        "valid_pos": None,
+                        "turnwise": state.turnwise + 1 % state.playernr,
+                        "movenr": state.movenr + 1,
+                    },
+                )
+                Moves1.objects.update_or_create(
+                    roomnr=roomnr,
+                    movenr=movenr,
+                    defaults={
+                        "coord_from": state.selected,
+                        "coord_to": coord_int,
+                    },
+                )
+            else:
+                print("invalid move")
+
         selected, valid_pos, neue_figuren, order, gewonnen = dct_game[roomnr].klicken(
             coord_int
         )
-        # data1=dct_game[roomnr].click1(coord_int, dct_game[roomnr])
-        # request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+        # if selected == selected1 and valid_pos == valid_pos1:
+        #     print("old and new games works fine")
+        # else:
+        #     print("old and new games works differently")
+        #     print(selected, selected1, valid_pos, valid_pos1)
         return Response(
             {
                 "selected": selected,
@@ -88,7 +135,8 @@ def klicken(request):
                 "gewonnen": gewonnen,
             }
         )
-    except (TypeError, ValueError):
+    except Exception as e:
+        print("Error by click: ", e)
         return Response({"error": "Invalid JSON data"}, status=400)
 
 
@@ -116,7 +164,7 @@ def reload_state(request):
     dct_game[roomnr] = Game(
         roomnr=roomnr,
         state_players=lst_state[0]["state_players"],
-        order=lst_state[0]["order"],
+        turnwise=lst_state[0]["order"],
     )
     return Response(
         {
@@ -139,8 +187,14 @@ def room_info(request):
     lst_roomnr_saved.sort()
     lst_roomnr_taken = list(dct_game.keys())
     lst_roomnr_taken.sort()
+    lst_roomnr_temp = list(GameState1.objects.values_list("roomnr", flat=True))
+    lst_roomnr_temp.sort()
     return Response(
-        {"lst_roomnr_taken": lst_roomnr_taken, "lst_roomnr_saved": lst_roomnr_saved}
+        {
+            "lst_roomnr_taken": lst_roomnr_taken,
+            "lst_roomnr_saved": lst_roomnr_saved,
+            "lst_roomnr_temp": lst_roomnr_temp,
+        }
     )
 
 
