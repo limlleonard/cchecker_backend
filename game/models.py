@@ -31,7 +31,7 @@ class GameState3(models.Model):
 
 
 class Moves1(models.Model):
-    roomnr = models.IntegerField(unique=True)
+    roomnr = models.IntegerField()
     movenr = models.IntegerField(default=0)
     coord_from = models.JSONField()
     coord_to = models.JSONField()
@@ -50,5 +50,5 @@ def get_ll_pieces(roomnr, movenr, game1):
             if tuple(move1.coord_from) in lst_pieces:
                 index_from = lst_pieces.index(tuple(move1.coord_from))
                 lst_pieces.pop(index_from)
-                lst_pieces.append(list(move1.coord_to))
+                lst_pieces.append(tuple(move1.coord_to))
     return ll_pieces

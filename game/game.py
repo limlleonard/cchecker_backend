@@ -44,7 +44,7 @@ class Board:
         lst_board, lst_board_round saves the coord of all positions in the same order"""
         self.dct_board = self.init_dict()
         self.lst_board = list(self.dct_board.values())
-        self.lst_board_int = [[round(x), round(y)] for x, y in self.lst_board]
+        self.lst_board_int = [(round(x), round(y)) for x, y in self.lst_board]
 
     def init_dict(self) -> dict:
         dct_board = {}
@@ -63,14 +63,14 @@ class Board:
                     for nr_circle_layer in range(nr_circles_layer):
                         x3 = x1 + (x2 - x1) * nr_circle_layer / nr_circles_layer
                         y3 = y1 + (y2 - y1) * nr_circle_layer / nr_circles_layer
-                        dct_board[(nr_layer, direction, nr_circle_layer)] = [x3, y3]
+                        dct_board[(nr_layer, direction, nr_circle_layer)] = (x3, y3)
                 else:  # outer layers / corners
                     for nr_circle_layer in range(
                         nr_skip, nr_circles_layer - nr_skip + 1
                     ):
                         x3 = x1 + (x2 - x1) * nr_circle_layer / nr_circles_layer
                         y3 = y1 + (y2 - y1) * nr_circle_layer / nr_circles_layer
-                        dct_board[(nr_layer, direction, nr_circle_layer)] = [x3, y3]
+                        dct_board[(nr_layer, direction, nr_circle_layer)] = (x3, y3)
         return dct_board
 
     def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
@@ -100,10 +100,10 @@ class Player:
                 init_dir + 3
             )  # +3 means + 180°, to the opposite side
         self.lst_piece_int = [
-            [round(coord[0]), round(coord[1])] for coord in self.lst_piece
+            (round(coord[0]), round(coord[1])) for coord in self.lst_piece
         ]
         self.lst_target_int = [
-            [round(coord[0]), round(coord[1])] for coord in self.lst_target
+            (round(coord[0]), round(coord[1])) for coord in self.lst_target
         ]
         self.selected = None  # coord of the selected figur
         self.valid_pos = []
@@ -128,7 +128,7 @@ class Player:
             for j in range(num_to_skip, num_circles_layer - num_to_skip + 1):
                 x2 = x + (x1 - x) * j / num_circles_layer
                 y2 = y + (y1 - y) * j / num_circles_layer
-                lst_piece.append([round(x2), round(y2)])
+                lst_piece.append((round(x2), round(y2)))
         return lst_piece
 
     def win_check(self) -> bool:
@@ -138,7 +138,7 @@ class Player:
             self.gewonnen = True
 
     def rotate(self, lst_piece: tuple) -> tuple:
-        return [[2 * CENTERX - x, 2 * CENTERY - y] for [x, y] in lst_piece]
+        return [(2 * CENTERX - x, 2 * CENTERY - y) for (x, y) in lst_piece]
 
     def get_state(self):
         return [
@@ -198,7 +198,7 @@ class Game:
                 x + 2 * DISTCC * cos(angle)
             )  # position über dem direkten Nachbar
             y2 = round(y + 2 * DISTCC * sin(angle))
-            lst_neighbor.append([[x1, y1], [x2, y2]])
+            lst_neighbor.append(((x1, y1), (x2, y2)))
         return lst_neighbor
 
     def get_ll_piece(self) -> list[list[tuple[int, int]]]:

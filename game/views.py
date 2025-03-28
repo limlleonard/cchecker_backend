@@ -32,9 +32,10 @@ def starten(request):
         roomnr = int(request.data.get("roomnr", 0))
         if roomnr not in dct_game:
             dct_game[roomnr] = Game(nr_player=playernr, roomnr=roomnr)
-            GameState3.objects.update_or_create(
+            GameState3.objects.filter(roomnr=roomnr).delete()
+            GameState3.objects.create(
                 roomnr=roomnr,
-                defaults={"playernr": playernr},
+                playernr=playernr,
             )
             return Response(
                 {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
@@ -71,10 +72,9 @@ def reset(request):
 @api_view(["POST"])  # DRF handles JSON & CSRF protection
 def klicken(request):
     try:
-        coord_int = [int(request.data.get("xr", 0)), int(request.data.get("yr", 0))]
+        coord_int = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
         roomnr = int(request.data.get("roomnr", 0))
         movenr = int(request.data.get("movenr", 0))
-
         # selected is None means it is waiting for clicking on a piece
         try:
             state = GameState3.objects.get(roomnr=roomnr)
@@ -121,11 +121,6 @@ def klicken(request):
         selected, valid_pos, neue_figuren, order, gewonnen = dct_game[roomnr].klicken(
             coord_int
         )
-        # if selected == selected1 and valid_pos == valid_pos1:
-        #     print("old and new games works fine")
-        # else:
-        #     print("old and new games works differently")
-        #     print(selected, selected1, valid_pos, valid_pos1)
         return Response(
             {
                 "selected": selected,
