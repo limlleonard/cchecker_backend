@@ -33,7 +33,7 @@ def starten(request):
         GameState3.objects.filter(roomnr=roomnr).delete()
         Moves1.objects.filter(roomnr=roomnr).delete()
         GameState3.objects.create(roomnr=roomnr, playernr=playernr)
-        return Response({"ll_piece": game1.get_init_piece(playernr)})
+        return Response({"ll_piece": game1.init_ll_piece(playernr)})
 
     except Exception as e:
         print("Error by starten: ", e)
@@ -63,17 +63,17 @@ def klicken(request):
     # because of backward function, it should delete the moves, if it is forwarded to the middle and make a move
     try:
         roomnr = int(request.data.get("roomnr"))
-        movenr = int(request.data.get("movenr"))
         coord_int = (int(request.data.get("xr")), int(request.data.get("yr")))
-        game1.click(roomnr, movenr, coord_int)
+        game1.click(roomnr, coord_int)
 
         state = GameState3.objects.get(roomnr=roomnr)
+        Moves1.objects.filter(roomnr=roomnr, movenr__gt=state.movenr).delete()
+        # once insert a move, the recorded moves should be deleted to avoid branch
         moves = Moves1.objects.filter(roomnr=roomnr)
+
         serializer = SerializerGameState(state)
         dct_response = serializer.data
-        dct_response["current_piece"] = game1.get_current_piece(
-            state, moves, state.movenr
-        )
+        dct_response["ll_piece"] = game1.get_ll_piece(state, moves)
         dct_response["gewonnen"] = False
         return Response(dct_response)
 
@@ -93,7 +93,7 @@ def reload_state(request):
         moves = Moves1.objects.filter(roomnr=roomnr)
         serializer = SerializerGameState(state)
         dct_response = serializer.data
-        dct_response["ll_piece"] = game1.get_current_piece(state, moves, state.movenr)
+        dct_response["ll_piece"] = game1.get_ll_piece(state, moves)
         dct_response["exist"] = True
         return Response(dct_response)
 
@@ -108,15 +108,47 @@ def room_info(request):
 
 @api_view(["POST"])
 def ward(request):
-    """One step back,"""
+    """Method for backward or forward"""
     direction = request.data.get("direction")
     roomnr = int(request.data.get("roomnr"))
-    movenr = int(request.data.get("movenr"))
-    state = GameState3.objects.get(roomnr=roomnr)
+    try:
+        state = GameState3.objects.get(roomnr=roomnr)
+    except GameState3.DoesNotExist:
+        Response({"moved": False})
+    moves = Moves1.objects.filter(roomnr=roomnr)
     if direction:
-        pass
+        moves_gt = moves.filter(movenr__gt=state.movenr)
+        print(moves_gt)
+        if moves_gt:
+            GameState3.objects.update_or_create(
+                roomnr=roomnr,
+                defaults={
+                    "selected": [],
+                    "valid_pos": [],
+                    "turnwise": (state.turnwise + 1) % state.playernr,
+                    "movenr": state.movenr + 1,
+                },
+            )
+        else:
+            Response({"moved": False})
     else:
-        # set selected, valid_pos to [], movenr -1, movenr_current
-        pass
-    print(direction)
-    return Response({"ok": True})
+        if state.movenr > 0:
+            GameState3.objects.update_or_create(
+                roomnr=roomnr,
+                defaults={
+                    "selected": [],
+                    "valid_pos": [],
+                    "turnwise": (state.turnwise - 1 + state.playernr) % state.playernr,
+                    "movenr": state.movenr - 1,
+                },
+            )
+        else:
+            Response({"moved": False})
+    state2 = GameState3.objects.get(roomnr=roomnr)
+    # moves = Moves1.objects.filter(roomnr=roomnr)
+    serializer = SerializerGameState(state2)
+    dct_response = serializer.data
+    dct_response["ll_piece"] = game1.get_ll_piece(state2, moves)
+    dct_response["gewonnen"] = False
+    dct_response["moved"] = True
+    return Response(dct_response)
