@@ -23,8 +23,8 @@ class GameState3(models.Model):
     playernr = models.IntegerField(default=1)
     turnwise = models.IntegerField(default=0)
     movenr = models.IntegerField(default=0)
-    selected = models.JSONField(null=True, blank=True, default=None)
-    valid_pos = models.JSONField(null=True, blank=True, default=None)
+    selected = models.JSONField(default=list)
+    valid_pos = models.JSONField(default=list)
 
     def __str__(self):
         return f"GameStateTemp {self.roomnr}"

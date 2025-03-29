@@ -1,5 +1,5 @@
 from math import pi, cos, sin
-from .models import GameState
+from .models import GameState, GameState3, Moves1
 
 width_board, height_board = 720, 720
 CENTERX, CENTERY = width_board / 2, height_board / 2
@@ -39,7 +39,7 @@ def rotate_point(
 class Board:
     def __init__(self):
         """
-        A customized coordinate is used for defining all the poitns on board but not used yet.
+        A customized coordinate is used for defining all the points on board but not used yet.
         (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
         lst_board, lst_board_round saves the coord of all positions in the same order"""
         self.dct_board = self.init_dict()
@@ -243,18 +243,7 @@ class Game:
         dfs(coord_int)
         return valid_pos
 
-    def click1(
-        self,
-        coord_int: tuple[int, int],
-        state_players: list[list[tuple[int, int]]],
-        turnwise: int,
-    ) -> tuple[
-        tuple[int, int] | None,
-        list[tuple[int, int]] | None,
-        list[list[tuple[int, int]]] | None,
-        int,
-        bool,
-    ]:
+    def klicken(self, coord_int: tuple[int, int]):
         """Args:
         coord_int: coordinate clicked
         state_players: coordinates of all players, get from DB probably
@@ -265,43 +254,6 @@ class Game:
         turnwise: int to indicate who is in turn
         gewonnen: win?
         """
-        new_pieces = None
-        players = [Player(state=state) for state in state_players]
-        player_inturn = players[turnwise]
-        if coord_int in player_inturn.lst_piece_int:  # click on a piece
-            player_inturn.valid_pos = self.find_valid_pos(coord_int)
-            if (
-                len(player_inturn.valid_pos) > 0
-            ):  # you can only select a piece, that can be moved
-                player_inturn.selected = coord_int
-        elif (
-            player_inturn.selected and coord_int in player_inturn.valid_pos
-        ):  # click on a field
-            # move piece, pop the old piece and insert the new piece
-            index_from = player_inturn.lst_piece_int.index(player_inturn.selected)
-            player_inturn.lst_piece_int.pop(index_from)
-            player_inturn.lst_piece.pop(index_from)
-            player_inturn.lst_piece_int.append(coord_int)
-            player_inturn.lst_piece.append(self.board.get_precise_coord(coord_int))
-            player_inturn.selected = None
-            player_inturn.valid_pos = []
-            player_inturn.win_check()
-            turnwise = (turnwise + 1) % len(players)
-            new_pieces = (
-                self.get_ll_piece1()
-            )  # if new_figures is not none, it means a piece is moved
-        else:
-            print("Invalid move", coord_int, players.lst_piece_int)
-        return (
-            player_inturn.selected,
-            player_inturn.valid_pos,
-            new_pieces,
-            turnwise,
-            player_inturn.gewonnen,
-        )
-
-    def klicken(self, coord_int: tuple[int, int]):
-        """klicking on a piece or a field,"""
         new_figures = None
         player_inturn = self.players[self.turnwise]
         if coord_int in player_inturn.lst_piece_int:  # click on a piece
@@ -379,7 +331,7 @@ class GameStateless:
             6: [1, 3, 5, 2, 4, 6],
         }
 
-    def init_state(self, nr_player):
+    def get_init_piece(self, nr_player):
         players = []
         for nr1 in range(nr_player):
             init_dir = self.dct_dir[nr_player][nr1]
@@ -408,15 +360,32 @@ class GameStateless:
             lst_neighbor.append(((x1, y1), (x2, y2)))
         return lst_neighbor
 
-    def click_piece(
-        self, coord_int: tuple[int, int], turnwise, state_players
+    def click(self, roomnr, movenr, coord_int):
+        try:
+            state = GameState3.objects.get(roomnr=roomnr)
+        except GameState3.DoesNotExist:
+            print("Game should have been created but not exist")
+            return
+        moves = Moves1.objects.filter(roomnr=roomnr)
+        current_piece = self.get_current_piece(state, moves, movenr)
+
+        if not state.selected:  # to select piece
+            self.click_piece(coord_int, state, current_piece, roomnr)
+        else:  # a piece is selected, now to move a piece
+            if list(coord_int) in state.valid_pos:
+                self.click_move(state, roomnr, movenr, coord_int)
+            else:
+                self.click_piece(coord_int, state, current_piece, roomnr)
+
+    def get_valid_pos(
+        self, coord_int: tuple[int, int], turnwise, current_pos
     ) -> list[tuple[int, int]]:
         """check if click on the right piece, if yes, check if it has available place to go"""
-        if coord_int not in state_players[turnwise]:
-            return None
+        if coord_int not in current_pos[turnwise]:
+            return []
         visited = set()
         valid_pos = []
-        ll_piece = state_players
+        ll_piece = current_pos
         lst_piece = [
             coord for pieces in ll_piece for coord in pieces
         ]  # Figuren aller Farben berückwichtigen
@@ -447,10 +416,52 @@ class GameStateless:
         dfs(coord_int)
         return valid_pos
 
-    def click_field(self, selected, coord_int, valid_pos):
-        if coord_int in valid_pos:
+    def click_piece(self, coord_int, state, current_piece, roomnr):
+        valid_pos1 = self.get_valid_pos(coord_int, state.turnwise, current_piece)
+        if valid_pos1:
+            selected1 = coord_int
+            GameState3.objects.update_or_create(
+                roomnr=roomnr,
+                defaults={
+                    "selected": selected1,
+                    "valid_pos": valid_pos1,
+                },
+            )
 
-            pass
+    def click_move(self, state, roomnr, movenr, coord_int):
+        GameState3.objects.update_or_create(
+            roomnr=roomnr,
+            defaults={
+                "selected": [],
+                "valid_pos": [],
+                "turnwise": (state.turnwise + 1) % state.playernr,
+                "movenr": state.movenr + 1,
+            },
+        )
+        Moves1.objects.update_or_create(
+            roomnr=roomnr,
+            movenr=movenr,
+            defaults={
+                "coord_from": state.selected,
+                "coord_to": coord_int,
+            },
+        )
+
+    def get_current_piece(
+        self,
+        state,
+        moves,
+        movenr,
+    ):
+        current_piece = self.get_init_piece(state.playernr)
+        for movenr in range(state.movenr):
+            move1 = moves.filter(movenr=movenr).first()
+            for lst_pieces in current_piece:
+                if tuple(move1.coord_from) in lst_pieces:
+                    index_from = lst_pieces.index(tuple(move1.coord_from))
+                    lst_pieces.pop(index_from)
+                    lst_pieces.append(tuple(move1.coord_to))
+        return current_piece
 
 
 class Games:
