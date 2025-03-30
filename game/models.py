@@ -1,14 +1,6 @@
 from django.db import models
 
 
-class Score(models.Model):
-    score = models.IntegerField()
-    name = models.CharField(max_length=20)
-
-    def __str__(self):
-        return f"{self.name}: {self.score}"
-
-
 class GameState(models.Model):
     turnwise = models.IntegerField()
     roomnr = models.IntegerField(unique=True)
@@ -25,6 +17,7 @@ class GameState3(models.Model):
     movenr = models.IntegerField(default=0)
     selected = models.JSONField(default=list)
     valid_pos = models.JSONField(default=list)
+    win = models.IntegerField(default=0)
 
     def __str__(self):
         return f"GameStateTemp {self.roomnr}"
@@ -38,17 +31,3 @@ class Moves1(models.Model):
 
     def __str__(self):
         return f"Move - {self.roomnr} - {self.movenr}"
-
-
-def get_ll_pieces(roomnr, movenr, game1):
-    state = GameState3.objects.get(roomnr=roomnr)
-    moves = Moves1.objects.filter(roomnr=roomnr)
-    ll_pieces = game1.init_state(state.playernr)
-    for movenr in range(state.movenr):
-        move1 = moves.filter(movenr=movenr).first()
-        for lst_pieces in ll_pieces:
-            if tuple(move1.coord_from) in lst_pieces:
-                index_from = lst_pieces.index(tuple(move1.coord_from))
-                lst_pieces.pop(index_from)
-                lst_pieces.append(tuple(move1.coord_to))
-    return ll_pieces

@@ -6,6 +6,18 @@
 
 Chinese Checker is a popular strategy board game in China, it was also my favorite game in my school time. It can be played by 1-6 person. The player try to move all the 10 pieces to the opposite corner of the board. One piece could be moved to an adjacent field or jump over ONE other piece once or for more times, but not jump over more than one piece.
 
+Start: It will start a new game from the beginning. Data saved with the same roomnr will be deleted.
+
+Load / Join: It will load a saved game or join the game.
+
+Reset: It will reset the game and delete the record.
+
+Room info: It shows game state saved in database
+
+`<<<`: One step backward
+
+`>>>`: One step forward
+
 <img src="./img/sternhalma1.png" alt="screenshot" width="70%"/>
 
 ## Components

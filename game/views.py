@@ -1,19 +1,14 @@
 import json
 from rest_framework.response import Response  # update database
-from rest_framework.decorators import (
-    api_view,
-    renderer_classes,
-)  # action, update database
+from rest_framework.decorators import api_view  # action, update database
 from django.http import JsonResponse, HttpResponse
 
-from .game import Game, Board, GameStateless
-from .models import *
-from .serializers import SerializerScore, SerializerGameState
+from .game import Board, GameStateless
+from .models import Moves1, GameState3
+from .serializers import SerializerGameState
 
 board1 = Board()  # to initialize board when the game is loaded for the first time
-dct_game = {}
 game1 = GameStateless()
-roomnr = 0
 
 
 def index(request):
@@ -26,14 +21,21 @@ def return_board(request):
 
 @api_view(["POST"])
 def starten(request):
-    """this should start game. Front should send nr_player here and reset game"""
+    """Front should send nr_player here and reset game
+    Args:
+        request:
+            - nrPlayer (int): The number of players.
+            - roomnr (int): The room number.
+    Returns:
+        Response: ll_piece (list)
+    """
     try:
         playernr = int(request.data.get("nrPlayer"))
         roomnr = int(request.data.get("roomnr"))
         GameState3.objects.filter(roomnr=roomnr).delete()
         Moves1.objects.filter(roomnr=roomnr).delete()
         GameState3.objects.create(roomnr=roomnr, playernr=playernr)
-        return Response({"ll_piece": game1.init_ll_piece(playernr)})
+        return Response({"ll_piece": game1.dct_ll_piece_init[playernr].copy()})
 
     except Exception as e:
         print("Error by starten: ", e)
@@ -42,7 +44,12 @@ def starten(request):
 
 @api_view(["POST"])
 def reset(request):
-    """Remove the instance from dct_game and the saved game in db"""
+    """Remove the saved game in db
+    Args:
+        request: roomnr
+    Returns:
+        Response: ok
+    """
     try:
         roomnr = int(request.data.get("roomnr"))
         game_state1 = GameState3.objects.filter(roomnr=roomnr)
@@ -60,7 +67,13 @@ def reset(request):
 # @csrf_exempt  # This disables 'Cross-site request forgery' for this view
 @api_view(["POST"])  # DRF handles JSON & CSRF protection
 def klicken(request):
-    # because of backward function, it should delete the moves, if it is forwarded to the middle and make a move
+    """
+    If the player backward to the middle of the game and then click, it should delete the record of previous play to avoid branch
+    Args:
+        request: roomnr, xr, yr
+    Returns:
+        Response: ll_piece, turnwise, movenr, selected, valid_pos, win
+    """
     try:
         roomnr = int(request.data.get("roomnr"))
         coord_int = (int(request.data.get("xr")), int(request.data.get("yr")))
@@ -68,13 +81,11 @@ def klicken(request):
 
         state = GameState3.objects.get(roomnr=roomnr)
         Moves1.objects.filter(roomnr=roomnr, movenr__gt=state.movenr).delete()
-        # once insert a move, the recorded moves should be deleted to avoid branch
         moves = Moves1.objects.filter(roomnr=roomnr)
 
         serializer = SerializerGameState(state)
         dct_response = serializer.data
         dct_response["ll_piece"] = game1.get_ll_piece(state, moves)
-        dct_response["gewonnen"] = False
         return Response(dct_response)
 
     except Exception as e:
@@ -84,7 +95,12 @@ def klicken(request):
 
 @api_view(["GET"])
 def reload_state(request):
-    """Search in DB, if exist return"""
+    """Search in DB, if exist return
+    Args:
+        request: roomnr
+    Returns:
+        Response: ll_piece, turnwise, movenr, selected, valid_pos
+    """
     roomnr = int(request.GET.get("roomnr"))
     state = GameState3.objects.filter(roomnr=roomnr).first()
     if not state:
@@ -100,7 +116,9 @@ def reload_state(request):
 
 @api_view(["GET"])
 def room_info(request):
-    """Return backend information"""
+    """Return under which roomnr is gamestate saved
+    Returns:
+        Response: lst_roomnr"""
     lst_roomnr = list(GameState3.objects.values_list("roomnr", flat=True))
     lst_roomnr.sort()
     return Response({"lst_roomnr": lst_roomnr})
@@ -108,8 +126,14 @@ def room_info(request):
 
 @api_view(["POST"])
 def ward(request):
-    """Method for backward or forward"""
-    direction = request.data.get("direction")
+    """Method for (one step) backward or forward
+    Moves are saved in the DB as following: When the player makes the first move, the movenr is 0, so the first move is give a movenr 0. Therefore, if there is a match when Moves in DB is greater or equal to movenr from frontend, it can be forwarded, not only greater
+    Args:
+        request: roomnr, direction
+    Returns:
+        Response: moved, ll_piece, turnwise, movenr, selected, valid_pos
+    """
+    direction = request.data.get("direction")  # true for forward
     roomnr = int(request.data.get("roomnr"))
     try:
         state = GameState3.objects.get(roomnr=roomnr)
@@ -117,8 +141,7 @@ def ward(request):
         Response({"moved": False})
     moves = Moves1.objects.filter(roomnr=roomnr)
     if direction:
-        moves_gt = moves.filter(movenr__gt=state.movenr)
-        print(moves_gt)
+        moves_gt = moves.filter(movenr__gte=state.movenr)
         if moves_gt:
             GameState3.objects.update_or_create(
                 roomnr=roomnr,
@@ -145,10 +168,8 @@ def ward(request):
         else:
             Response({"moved": False})
     state2 = GameState3.objects.get(roomnr=roomnr)
-    # moves = Moves1.objects.filter(roomnr=roomnr)
     serializer = SerializerGameState(state2)
     dct_response = serializer.data
     dct_response["ll_piece"] = game1.get_ll_piece(state2, moves)
-    dct_response["gewonnen"] = False
     dct_response["moved"] = True
     return Response(dct_response)
