@@ -7,7 +7,6 @@ from .game import Board, GameStateless
 from .models import Moves1, GameState3
 from .serializers import SerializerGameState
 
-board1 = Board()  # to initialize board when the game is loaded for the first time
 game1 = GameStateless()
 
 
@@ -16,7 +15,7 @@ def index(request):
 
 
 def return_board(request):
-    return JsonResponse(board1.lst_board_int, safe=False)
+    return JsonResponse(Board.lst_board_int, safe=False)
 
 
 @api_view(["POST"])
@@ -35,7 +34,7 @@ def starten(request):
         GameState3.objects.filter(roomnr=roomnr).delete()
         Moves1.objects.filter(roomnr=roomnr).delete()
         GameState3.objects.create(roomnr=roomnr, playernr=playernr)
-        return Response({"ll_piece": game1.dct_ll_piece_init[playernr].copy()})
+        return Response({"ll_piece": GameStateless.dct_ll_piece_init[playernr].copy()})
 
     except Exception as e:
         print("Error by starten: ", e)
@@ -77,7 +76,7 @@ def klicken(request):
     try:
         roomnr = int(request.data.get("roomnr"))
         coord_int = (int(request.data.get("xr")), int(request.data.get("yr")))
-        game1.click(roomnr, coord_int)
+        GameStateless.click(roomnr, coord_int)
 
         state = GameState3.objects.get(roomnr=roomnr)
         Moves1.objects.filter(roomnr=roomnr, movenr__gt=state.movenr).delete()
@@ -85,7 +84,7 @@ def klicken(request):
 
         serializer = SerializerGameState(state)
         dct_response = serializer.data
-        dct_response["ll_piece"] = game1.get_ll_piece(state, moves)
+        dct_response["ll_piece"] = GameStateless.get_ll_piece(state, moves)
         return Response(dct_response)
 
     except Exception as e:

@@ -38,16 +38,8 @@ def rotate_point(
 
 
 class Board:
-    def __init__(self):
-        """
-        A customized coordinate is used for defining all the points on board but not used yet.
-        (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
-        lst_board, lst_board_round saves the coord of all positions in the same order"""
-        self.dct_board = self.init_dict()
-        self.lst_board = list(self.dct_board.values())
-        self.lst_board_int = [(round(x), round(y)) for x, y in self.lst_board]
-
-    def init_dict(self) -> dict:
+    @classmethod
+    def init_dict(cls) -> dict:
         dct_board = {}
         dct_board[(0, 0, 0)] = (CENTERX, CENTERY)
         for nr_layer in range(1, Middle_Layer * 2 + 1):
@@ -74,13 +66,22 @@ class Board:
                         dct_board[(nr_layer, direction, nr_circle_layer)] = (x3, y3)
         return dct_board
 
-    def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
+    """
+    A customized coordinate is used for defining all the points on board but not used yet.
+    (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
+    lst_board, lst_board_round saves the coord of all positions in the same order"""
+    dct_board = init_dict.__get__(object)()
+    lst_board = list(dct_board.values())
+    lst_board_int = [(round(x), round(y)) for x, y in lst_board]
+
+    @classmethod
+    def get_precise_coord(cls, coord_int: tuple[int, ...]) -> tuple[float, ...]:
         """
         Args: coord_int
         Returns: coord_float
         find the index in lst_board_int, then return the value from lst_board since they have the same order
         """
-        return self.lst_board[self.lst_board_int.index(coord_int)]
+        return cls.lst_board[cls.lst_board_int.index(coord_int)]
 
 
 class Player:
@@ -110,7 +111,8 @@ class Player:
         self.valid_pos = []
         self.gewonnen = False
 
-    def init_pieces(self, init_dir):
+    @staticmethod
+    def init_pieces(init_dir):
         """Initialize the pieces, it is similar to init board, but just create one corner"""
         lst_piece = []
         for k in range(Middle_Layer + 1, Middle_Layer * 2 + 1):
@@ -138,7 +140,8 @@ class Player:
         if sorted_lst_piece == sorted_lst_ziel:
             self.gewonnen = True
 
-    def rotate(self, lst_piece: tuple) -> tuple:
+    @staticmethod
+    def rotate(lst_piece: tuple) -> tuple:
         return [(2 * CENTERX - x, 2 * CENTERY - y) for (x, y) in lst_piece]
 
     def get_state(self):
@@ -157,7 +160,6 @@ class Game:
         turnwise=0,
     ):
         """game will be either initialized from 0 or from a given state"""
-        self.board = Board()
         self.roomnr = roomnr
         self.dct_dir = {
             1: [1],
@@ -179,17 +181,14 @@ class Game:
             self.turnwise = turnwise
             self.players = [Player(state=state) for state in state_players]
         else:
-            # create a stateless game to use stateless functions
-            pass
-
-            # print(
-            #     f"roomnr: {roomnr}, nr_player: {nr_player}, ll_pieces: {state_players}, turnwise: {turnwise}"
-            # )
-            # raise Exception("Given vars cannot create a new game")
+            print(
+                f"roomnr: {roomnr}, nr_player: {nr_player}, ll_pieces: {state_players}, turnwise: {turnwise}"
+            )
+            raise Exception("Given vars cannot create a new game")
 
     def find_neighbors(self, coord_int: tuple[int, ...]) -> tuple[int, ...]:
         """6 positions around the figure + 6 positionen over them"""
-        x, y = self.board.get_precise_coord(coord_int)
+        x, y = Board.get_precise_coord(coord_int)
         lst_neighbor = []
         for i in range(6):
             angle = i * 2 * pi / 6
@@ -220,7 +219,7 @@ class Game:
         lst_neighbor = self.find_neighbors(coord_int)
         for coord1, _ in lst_neighbor:  # no jump
             if (
-                coord1 in self.board.lst_board_int and coord1 not in lst_piece
+                coord1 in Board.lst_board_int and coord1 not in lst_piece
             ):  # if it is in board but not in pieces
                 valid_pos.append(coord1)
 
@@ -237,7 +236,7 @@ class Game:
                     coord2 not in visited
                     and coord1 in lst_piece  # there is one piece to jump over
                     and coord2 not in lst_piece  # over the piece there is space
-                    and coord2 in self.board.lst_board_int
+                    and coord2 in Board.lst_board_int
                 ):
                     dfs(coord2)
 
@@ -272,7 +271,7 @@ class Game:
             player_inturn.lst_piece_int.pop(index_from)
             player_inturn.lst_piece.pop(index_from)
             player_inturn.lst_piece_int.append(coord_int)
-            player_inturn.lst_piece.append(self.board.get_precise_coord(coord_int))
+            player_inturn.lst_piece.append(Board.get_precise_coord(coord_int))
             # coord_to=coord_round
             player_inturn.selected = None
             player_inturn.valid_pos = []
@@ -321,38 +320,29 @@ class Game:
 
 
 class GameStateless:
-    def __init__(self):
-        self.board = Board()
-        self._dct_dir = {
-            1: [1],
-            2: [1, 4],
-            3: [1, 3, 5],
-            4: [1, 4, 2, 5],
-            5: [1, 3, 5, 2, 4],
-            6: [1, 3, 5, 2, 4, 6],
-        }
-        self.dct_ll_piece_init = {}
-        self.dct_ll_target = {}
-        for playernr, init_dirs in self._dct_dir.items():
-            ll_piece_init = []
-            ll_target = []
-            for dir1 in init_dirs:
-                p1 = Player(dir1)
-                ll_piece_init.append(p1.lst_piece_int)
-                ll_target.append(p1.lst_target_int)
-            self.dct_ll_piece_init[playernr] = ll_piece_init
-            self.dct_ll_target[playernr] = ll_target
+    _dct_dir = {
+        1: [1],
+        2: [1, 4],
+        3: [1, 3, 5],
+        4: [1, 4, 2, 5],
+        5: [1, 3, 5, 2, 4],
+        6: [1, 3, 5, 2, 4, 6],
+    }
+    dct_ll_piece_init = {}
+    dct_ll_target = {}
+    for playernr, init_dirs in _dct_dir.items():
+        ll_piece_init = []
+        ll_target = []
+        for dir1 in init_dirs:
+            p1 = Player(dir1)
+            ll_piece_init.append(p1.lst_piece_int)
+            ll_target.append(p1.lst_target_int)
+        dct_ll_piece_init[playernr] = ll_piece_init
+        dct_ll_target[playernr] = ll_target
 
-    # def init_ll_piece(self, nr_player: int):
-    #     ll_piece_init = []
-    #     for nr1 in range(nr_player):
-    #         init_dir = self._dct_dir[nr_player][nr1]
-    #         p1 = Player(init_dir)
-    #         ll_piece_init.append(p1.lst_piece_int)
-    #     return ll_piece_init
-
+    @staticmethod
     def get_valid_pos(
-        self, coord_int: tuple[int, int], turnwise, current_pos
+        coord_int: tuple[int, int], turnwise, current_pos
     ) -> list[tuple[int, int]]:
         """
         check if click on a piece of the player in turn, if yes, check if it has available place to go
@@ -365,10 +355,10 @@ class GameStateless:
         lst_piece = [
             coord for pieces in ll_piece for coord in pieces
         ]  # Figuren aller Farben berückwichtigen
-        lst_neighbor = self._find_neighbors(coord_int)
+        lst_neighbor = GameStateless._find_neighbors(coord_int)
         for coord1, _ in lst_neighbor:  # no jump
             if (
-                coord1 in self.board.lst_board_int and coord1 not in lst_piece
+                coord1 in Board.lst_board_int and coord1 not in lst_piece
             ):  # if it is in board but not in pieces
                 valid_pos.append(coord1)
 
@@ -379,24 +369,25 @@ class GameStateless:
             visited.add(coord_int)  # Mark node as visited
             valid_pos.append(coord_int)  # Add node to connected list
 
-            lst_neighbor1 = self._find_neighbors(coord_int)
+            lst_neighbor1 = GameStateless._find_neighbors(coord_int)
             for coord1, coord2 in lst_neighbor1:
                 if (
                     coord2 not in visited
                     and coord1 in lst_piece  # there is one piece to jump over
                     and coord2 not in lst_piece  # over the piece there is space
-                    and coord2 in self.board.lst_board_int
+                    and coord2 in Board.lst_board_int
                 ):
                     dfs(coord2)
 
         dfs(coord_int)
         return valid_pos
 
-    def get_ll_piece(self, state, moves):
+    @staticmethod
+    def get_ll_piece(state, moves):
         """
         Start from initial place, play the moves one by one to reach the final state
         """
-        current_piece = copy.deepcopy(self.dct_ll_piece_init[state.playernr])
+        current_piece = copy.deepcopy(GameStateless.dct_ll_piece_init[state.playernr])
         for movenr in range(state.movenr):
             move1 = moves.filter(movenr=movenr).first()
             for lst_pieces in current_piece:
@@ -406,7 +397,8 @@ class GameStateless:
                     lst_pieces.append(tuple(move1.coord_to))
         return current_piece
 
-    def click(self, roomnr: int, coord_int: tuple[int, int]) -> None:
+    @staticmethod
+    def click(roomnr: int, coord_int: tuple[int, int]) -> None:
         """Datas in DB are directly changed here"""
         try:
             state = GameState3.objects.get(roomnr=roomnr)
@@ -414,23 +406,24 @@ class GameStateless:
             print("Game should have been created but not exist")
             return
         moves = Moves1.objects.filter(roomnr=roomnr)
-        ll_piece = self.get_ll_piece(state, moves)
+        ll_piece = GameStateless.get_ll_piece(state, moves)
 
         if not state.selected:  # to select piece
-            self._click_piece(coord_int, state, ll_piece, roomnr)
+            GameStateless._click_piece(coord_int, state, ll_piece, roomnr)
         else:  # a piece is selected, now to move a piece
             if list(coord_int) in state.valid_pos:
-                self._click_move(state, roomnr, coord_int)
+                GameStateless._click_move(state, roomnr, coord_int)
             else:
-                self._click_piece(coord_int, state, ll_piece, roomnr)
+                GameStateless._click_piece(coord_int, state, ll_piece, roomnr)
 
-    def _find_neighbors(self, coord_int: tuple[int, ...]) -> tuple[int, ...]:
+    @staticmethod
+    def _find_neighbors(coord_int: tuple[int, ...]) -> tuple[int, ...]:
         """
         Args: coord_int
         Returns: lst_neighbor [(coord_inner_neighbor, coord_outer_neighbor), ()]
         neighbors are 6 positions around the figure + 6 positionen over them
         """
-        x, y = self.board.get_precise_coord(coord_int)
+        x, y = Board.get_precise_coord(coord_int)
         lst_neighbor = []
         for i in range(6):
             angle = i * 2 * pi / 6
@@ -443,8 +436,11 @@ class GameStateless:
             lst_neighbor.append(((x1, y1), (x2, y2)))
         return lst_neighbor
 
-    def _click_piece(self, coord_int, state, current_piece, roomnr):
-        valid_pos1 = self.get_valid_pos(coord_int, state.turnwise, current_piece)
+    @staticmethod
+    def _click_piece(coord_int, state, current_piece, roomnr):
+        valid_pos1 = GameStateless.get_valid_pos(
+            coord_int, state.turnwise, current_piece
+        )
         if valid_pos1:
             selected1 = coord_int
             GameState3.objects.update_or_create(
@@ -455,7 +451,8 @@ class GameStateless:
                 },
             )
 
-    def _click_move(self, state, roomnr, coord_int):
+    @staticmethod
+    def _click_move(state, roomnr, coord_int):
         GameState3.objects.update_or_create(
             roomnr=roomnr,
             defaults={
@@ -476,10 +473,10 @@ class GameStateless:
         # win check
         state2 = GameState3.objects.get(roomnr=roomnr)
         moves = Moves1.objects.filter(roomnr=roomnr)
-        ll_piece = self.get_ll_piece(state, moves)
+        ll_piece = GameStateless.get_ll_piece(state, moves)
         for nr in range(state2.playernr):
             lst_piece = ll_piece[nr]
-            lst_target = self.dct_ll_target[state2.playernr][nr]
+            lst_target = GameStateless.dct_ll_target[state2.playernr][nr]
             if sorted(lst_piece) == sorted(lst_target):
                 GameState3.objects.update_or_create(
                     roomnr=roomnr, defaults={"win": nr + 1}
