@@ -8,7 +8,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALLOWED_HOSTS = [
-    "sternhalma.onrender.com",
     "127.0.0.1",
     "cchecker-backend.onrender.com",
 ]
