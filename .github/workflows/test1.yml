@@ -10,6 +10,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: back.settings
+      SECRET_KEY: ${{ variables.SECRET_KEY }}
 
     steps:
     - name: Checkout code
