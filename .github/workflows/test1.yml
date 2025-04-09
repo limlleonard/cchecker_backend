@@ -10,12 +10,11 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: back.settings
-      ENV_YML1: env_yml11
-      ENV_YML2: ${{ env.SECRET_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
     - name: test1
-      run: echo "test1 repo var ${{ vars.REPO_VAR2 }}"
+      run: echo "test1 secrets ${{ secrets.SECRET_KEY }}"
 
     - name: test2
-      run: echo "test2 repo sec ${{ vars.REPO_SEC2 }}"
+      run: echo "test1 vars ${{ vars.SECRET_KEY }}"
