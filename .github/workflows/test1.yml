@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: test1
-      run: echo "test1 secrets ${{ secrets.SECRET_KEY }}"
+      run: echo "test1 repo var ${{ vars.REPO_VAR2 }}"
 
     - name: test2
-      run: echo "test1 vars ${{ vars.SECRET_KEY }}"
+      run: echo "test2 repo sec ${{ secrets.REPO_SEC2 }}"
