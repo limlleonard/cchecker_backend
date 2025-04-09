@@ -7,27 +7,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    environment: test_env
     env:
       DJANGO_SETTINGS_MODULE: back.settings
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: test1
+      run: echo "test1 repo var ${{ vars.REPO_VAR2 }}"
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+    - name: test2
+      run: echo "test2 repo sec ${{ secrets.REPO_SEC2 }}"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run migrations
-      run: python manage.py migrate
-
-    - name: Run tests
-      run: python manage.py test
+    - name: test3
+      run: echo "test3 env var ${{ vars.ENV_VAR1 }}"
+      
+    - name: test4
+      run: echo "test4 env sec ${{ secrets.ENV_SEC1 }}"
