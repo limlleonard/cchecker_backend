@@ -11,7 +11,7 @@ jobs:
     env:
       DJANGO_SETTINGS_MODULE: back.settings
       ENV_YML1: env_yml11
-      ENV_YML2: ${{ test_env.SECRET_KEY }}
+      ENV_YML2: ${{ env.SECRET_KEY }}
 
     steps:
     - name: test1
