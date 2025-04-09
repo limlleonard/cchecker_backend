@@ -19,9 +19,3 @@ jobs:
 
     - name: test2
       run: echo "test2 repo sec ${{ vars.REPO_SEC2 }}"
-
-    - name: test3
-      run: echo "test3 env_yml ${{ env.ENV_YML1 }}"
-      
-    - name: test4
-      run: echo "test4 env_yml ${{ env.ENV_YML2 }}"
