@@ -142,7 +142,7 @@ def ward(request):
         Response({"moved": False})
     moves = Moves.objects.filter(roomnr=roomnr)
     if direction:
-        moves_gt = moves.filter(movenr__gte=state.movenr)
+        moves_gt = moves.filter(movenr__gte=state.movenr)  # greater than or equal
         if moves_gt:
             GameStateTemp.objects.update_or_create(
                 roomnr=roomnr,
@@ -164,6 +164,7 @@ def ward(request):
                     "valid_pos": [],
                     "turnwise": (state.turnwise - 1 + state.playernr) % state.playernr,
                     "movenr": state.movenr - 1,
+                    "win": False,  # Avoid once win is set, by clicking back and forth will not change it any more
                 },
             )
         else:
