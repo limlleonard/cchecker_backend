@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class GameState(models.Model):
+class GameStateEnd(models.Model):
     turnwise = models.IntegerField()
     roomnr = models.IntegerField(unique=True)
     state_players = models.JSONField()
@@ -10,7 +10,9 @@ class GameState(models.Model):
         return f"GameState {self.roomnr}"
 
 
-class GameState3(models.Model):
+class GameStateTemp(models.Model):
+    """Keep track of (only) the last move of the player, including additional information, like turnwise, movenr and so on"""
+
     roomnr = models.IntegerField(unique=True)
     playernr = models.IntegerField(default=1)
     turnwise = models.IntegerField(default=0)
@@ -23,7 +25,7 @@ class GameState3(models.Model):
         return f"GameStateTemp {self.roomnr}"
 
 
-class Moves1(models.Model):
+class Moves(models.Model):
     roomnr = models.IntegerField()
     movenr = models.IntegerField(default=0)
     coord_from = models.JSONField()

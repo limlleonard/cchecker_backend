@@ -4,9 +4,10 @@ from rest_framework.decorators import api_view  # action, update database
 from django.http import JsonResponse, HttpResponse
 
 from .game import Board, GameStateless
-from .models import Moves1, GameState3
+from .models import Moves, GameStateTemp
 from .serializers import SerializerGameState
 
+Board.setup_class()
 game1 = GameStateless()
 
 
@@ -31,9 +32,9 @@ def starten(request):
     try:
         playernr = int(request.data.get("nrPlayer"))
         roomnr = int(request.data.get("roomnr"))
-        GameState3.objects.filter(roomnr=roomnr).delete()
-        Moves1.objects.filter(roomnr=roomnr).delete()
-        GameState3.objects.create(roomnr=roomnr, playernr=playernr)
+        GameStateTemp.objects.filter(roomnr=roomnr).delete()
+        Moves.objects.filter(roomnr=roomnr).delete()
+        GameStateTemp.objects.create(roomnr=roomnr, playernr=playernr)
         return Response({"ll_piece": GameStateless.dct_ll_piece_init[playernr].copy()})
 
     except Exception as e:
@@ -51,10 +52,10 @@ def reset(request):
     """
     try:
         roomnr = int(request.data.get("roomnr"))
-        game_state1 = GameState3.objects.filter(roomnr=roomnr)
+        game_state1 = GameStateTemp.objects.filter(roomnr=roomnr)
         if game_state1.exists():
             game_state1.delete()
-        move1 = Moves1.objects.filter(roomnr=roomnr)
+        move1 = Moves.objects.filter(roomnr=roomnr)
         if move1.exists():
             move1.delete()
         return Response({"ok": True})
@@ -63,7 +64,6 @@ def reset(request):
         return Response({"ok": False}, status=400)
 
 
-# @csrf_exempt  # This disables 'Cross-site request forgery' for this view
 @api_view(["POST"])  # DRF handles JSON & CSRF protection
 def klicken(request):
     """
@@ -78,9 +78,9 @@ def klicken(request):
         coord_int = (int(request.data.get("xr")), int(request.data.get("yr")))
         GameStateless.click(roomnr, coord_int)
 
-        state = GameState3.objects.get(roomnr=roomnr)
-        Moves1.objects.filter(roomnr=roomnr, movenr__gt=state.movenr).delete()
-        moves = Moves1.objects.filter(roomnr=roomnr)
+        state = GameStateTemp.objects.get(roomnr=roomnr)
+        Moves.objects.filter(roomnr=roomnr, movenr__gt=state.movenr).delete()
+        moves = Moves.objects.filter(roomnr=roomnr)
 
         serializer = SerializerGameState(state)
         dct_response = serializer.data
@@ -101,11 +101,11 @@ def reload_state(request):
         Response: ll_piece, turnwise, movenr, selected, valid_pos
     """
     roomnr = int(request.GET.get("roomnr"))
-    state = GameState3.objects.filter(roomnr=roomnr).first()
+    state = GameStateTemp.objects.filter(roomnr=roomnr).first()
     if not state:
         return Response({"exist": False})
     else:
-        moves = Moves1.objects.filter(roomnr=roomnr)
+        moves = Moves.objects.filter(roomnr=roomnr)
         serializer = SerializerGameState(state)
         dct_response = serializer.data
         dct_response["ll_piece"] = game1.get_ll_piece(state, moves)
@@ -115,10 +115,12 @@ def reload_state(request):
 
 @api_view(["GET"])
 def room_info(request):
-    """Return under which roomnr is gamestate saved
+    """Return under which roomnr is moves saved
     Returns:
         Response: lst_roomnr"""
-    lst_roomnr = list(GameState3.objects.values_list("roomnr", flat=True))
+    lst_roomnr = list(
+        GameStateTemp.objects.values_list("roomnr", flat=True)
+    )  # plain list
     lst_roomnr.sort()
     return Response({"lst_roomnr": lst_roomnr})
 
@@ -135,14 +137,14 @@ def ward(request):
     direction = request.data.get("direction")  # true for forward
     roomnr = int(request.data.get("roomnr"))
     try:
-        state = GameState3.objects.get(roomnr=roomnr)
-    except GameState3.DoesNotExist:
+        state = GameStateTemp.objects.get(roomnr=roomnr)
+    except GameStateTemp.DoesNotExist:
         Response({"moved": False})
-    moves = Moves1.objects.filter(roomnr=roomnr)
+    moves = Moves.objects.filter(roomnr=roomnr)
     if direction:
         moves_gt = moves.filter(movenr__gte=state.movenr)
         if moves_gt:
-            GameState3.objects.update_or_create(
+            GameStateTemp.objects.update_or_create(
                 roomnr=roomnr,
                 defaults={
                     "selected": [],
@@ -155,7 +157,7 @@ def ward(request):
             Response({"moved": False})
     else:
         if state.movenr > 0:
-            GameState3.objects.update_or_create(
+            GameStateTemp.objects.update_or_create(
                 roomnr=roomnr,
                 defaults={
                     "selected": [],
@@ -166,7 +168,7 @@ def ward(request):
             )
         else:
             Response({"moved": False})
-    state2 = GameState3.objects.get(roomnr=roomnr)
+    state2 = GameStateTemp.objects.get(roomnr=roomnr)
     serializer = SerializerGameState(state2)
     dct_response = serializer.data
     dct_response["ll_piece"] = game1.get_ll_piece(state2, moves)

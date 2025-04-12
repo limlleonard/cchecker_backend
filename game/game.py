@@ -1,6 +1,6 @@
 import copy
 from math import pi, cos, sin
-from .models import GameState, GameState3, Moves1
+from .models import GameStateEnd, GameStateTemp, Moves
 
 width_board, height_board = 720, 720
 CENTERX, CENTERY = width_board / 2, height_board / 2
@@ -38,6 +38,8 @@ def rotate_point(
 
 
 class Board:
+    dct_board = lst_board = lst_board_int = None
+
     @classmethod
     def init_dict(cls) -> dict:
         dct_board = {}
@@ -70,9 +72,12 @@ class Board:
     A customized coordinate is used for defining all the points on board but not used yet.
     (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
     lst_board, lst_board_round saves the coord of all positions in the same order"""
-    dct_board = init_dict.__get__(object)()
-    lst_board = list(dct_board.values())
-    lst_board_int = [(round(x), round(y)) for x, y in lst_board]
+
+    @classmethod
+    def setup_class(cls):
+        cls.dct_board = cls.init_dict()
+        cls.lst_board = list(cls.dct_board.values())
+        cls.lst_board_int = [(round(x), round(y)) for x, y in cls.lst_board]
 
     @classmethod
     def get_precise_coord(cls, coord_int: tuple[int, ...]) -> tuple[float, ...]:
@@ -84,6 +89,9 @@ class Board:
         return cls.lst_board[cls.lst_board_int.index(coord_int)]
 
 
+Board.setup_class()
+
+
 class Player:
     def __init__(self, init_dir=1, state: list | None = None):
         """
@@ -92,8 +100,6 @@ class Player:
             state: saved lst_piece and lst_target, used to reload a player
         """
         if state is not None:
-            # self.lst_piece = [tuple(coord) for coord in state[0]]
-            # self.lst_target = [tuple(coord) for coord in state[1]]
             self.lst_piece = state[0]
             self.lst_target = state[1]
         else:
@@ -145,13 +151,12 @@ class Player:
         return [(2 * CENTERX - x, 2 * CENTERY - y) for (x, y) in lst_piece]
 
     def get_state(self):
-        return [
-            self.lst_piece,
-            self.lst_target,
-        ]
+        return [self.lst_piece, self.lst_target]
 
 
 class Game:
+    """Not in use"""
+
     def __init__(
         self,
         roomnr=0,
@@ -313,8 +318,8 @@ class Game:
 
     def save_state(self) -> None:
         state_players = [p1.get_state() for p1 in self.players]
-        GameState.objects.filter(roomnr=self.roomnr).delete()
-        GameState.objects.create(
+        GameStateEnd.objects.filter(roomnr=self.roomnr).delete()
+        GameStateEnd.objects.create(
             turnwise=self.turnwise, roomnr=self.roomnr, state_players=state_players
         )
 
@@ -401,11 +406,11 @@ class GameStateless:
     def click(roomnr: int, coord_int: tuple[int, int]) -> None:
         """Datas in DB are directly changed here"""
         try:
-            state = GameState3.objects.get(roomnr=roomnr)
-        except GameState3.DoesNotExist:
+            state = GameStateTemp.objects.get(roomnr=roomnr)
+        except GameStateTemp.DoesNotExist:
             print("Game should have been created but not exist")
             return
-        moves = Moves1.objects.filter(roomnr=roomnr)
+        moves = Moves.objects.filter(roomnr=roomnr)
         ll_piece = GameStateless.get_ll_piece(state, moves)
 
         if not state.selected:  # to select piece
@@ -443,7 +448,7 @@ class GameStateless:
         )
         if valid_pos1:
             selected1 = coord_int
-            GameState3.objects.update_or_create(
+            GameStateTemp.objects.update_or_create(
                 roomnr=roomnr,
                 defaults={
                     "selected": selected1,
@@ -453,7 +458,7 @@ class GameStateless:
 
     @staticmethod
     def _click_move(state, roomnr, coord_int):
-        GameState3.objects.update_or_create(
+        GameStateTemp.objects.update_or_create(
             roomnr=roomnr,
             defaults={
                 "selected": [],
@@ -462,7 +467,7 @@ class GameStateless:
                 "movenr": state.movenr + 1,
             },
         )
-        Moves1.objects.update_or_create(
+        Moves.objects.update_or_create(
             roomnr=roomnr,
             movenr=state.movenr,
             defaults={
@@ -471,14 +476,14 @@ class GameStateless:
             },
         )
         # win check
-        state2 = GameState3.objects.get(roomnr=roomnr)
-        moves = Moves1.objects.filter(roomnr=roomnr)
+        state2 = GameStateTemp.objects.get(roomnr=roomnr)
+        moves = Moves.objects.filter(roomnr=roomnr)
         ll_piece = GameStateless.get_ll_piece(state, moves)
         for nr in range(state2.playernr):
             lst_piece = ll_piece[nr]
             lst_target = GameStateless.dct_ll_target[state2.playernr][nr]
             if sorted(lst_piece) == sorted(lst_target):
-                GameState3.objects.update_or_create(
+                GameStateTemp.objects.update_or_create(
                     roomnr=roomnr, defaults={"win": nr + 1}
                 )
 

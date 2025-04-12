@@ -5,12 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = True
+DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "cchecker-backend.onrender.com",
-]
+ALLOWED_HOSTS = ["127.0.0.1"]
 render_external_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if render_external_hostname:
     ALLOWED_HOSTS.append(render_external_hostname)
@@ -45,7 +42,7 @@ ROOT_URLCONF = "back.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "front/dist")],  # nach index.html suchen
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -71,16 +68,16 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": "bjv43dmw65b7obui857u",
-#         "USER": "uwss14x03ljxhvrjdqvo",
-#         "PASSWORD": os.environ.get("DB_PASSWORD"),  # on render
-#         "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
-#         "PORT": "50013",
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "bjv43dmw65b7obui857u",
+        "USER": "uwss14x03ljxhvrjdqvo",
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
+        "PORT": "50013",
+    }
+}
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -105,33 +102,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-# STATIC_URL = "assets/"
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "front/dist/assets")]
-# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # deploy in product
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS_ALLOWED_ORIGINS = [
-#     # "http://localhost:5173",
-#     # "http://127.0.0.1:5173",
-#     "*"
-# ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-
-# SESSION_ENGINE = 'django.contrib.sessions.backends.file'
-# SESSION_FILE_PATH = '/tmp'
-
-# SESSION_ENGINE = 'django.contrib.sessions.backends.cache' # default: django.contrib.sessions.models.Session
-# SESSION_CACHE_ALIAS = 'default'
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#         'LOCATION': 'unique-snowflake',
-#     }
-# }
-# SESSION_COOKIE_SECURE = False  # True for HTTPS only
-# SESSION_COOKIE_HTTPONLY = True
-# SESSION_SAVE_EVERY_REQUEST = True  # Save the session on every request
-# SESSION_EXPIRE_AT_BROWSER_CLOSE = False

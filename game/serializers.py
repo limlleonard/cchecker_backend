@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import GameState3
+from .models import GameStateTemp
 
 
 class SerializerGameState(serializers.ModelSerializer):
     class Meta:
-        model = GameState3
+        model = GameStateTemp
         fields = "__all__"
