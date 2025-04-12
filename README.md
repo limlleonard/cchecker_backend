@@ -22,6 +22,8 @@ Room info: It shows game state saved in database
 `>>>`: One step forward
 
 ## Installation
+(You have to start both servers of frontend and backend to test the game locally)
+
 Clone repo
 
 `git clone https://github.com/limlleonard/cchecker_backend.git`
@@ -57,6 +59,13 @@ By using WebSocket and Djanog Channels, you could play the game with friends rem
 ## Components
 Frontend is built by React. Backend is built by Django.
 
+### Database
+Django ORM is used to interact with database.
+- GameStateEnd: keep track of the end state of a game (used in the old version of the game)
+- GameStateTemp: keep track of (only) the last move or select of the player
+- Moves: keep track of all the moves. With those moves, the current state can be calculated by adding up all the moves to the initial state 
+
+### Coordinate system
 Defining each position of the board is a little tricky. They are defined by three numbers.
 - First number defines to which direction it goes away from the center. There are six possible directions.
 - Second number defines how far it goes away from the center
