@@ -145,6 +145,8 @@ class Player:
         sorted_lst_ziel = sorted(self.lst_target_int)
         if sorted_lst_piece == sorted_lst_ziel:
             self.gewonnen = True
+        else:
+            self.gewonnen = False
 
     @staticmethod
     def rotate(lst_piece: tuple) -> tuple:
