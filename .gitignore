@@ -2,4 +2,4 @@
 .env
 templates
 staticfiles
-*.sqlite3
+db.sqlite3

@@ -21,6 +21,36 @@ Room info: It shows game state saved in database
 
 `>>>`: One step forward
 
+## Installation
+Clone repo
+
+`git clone https://github.com/limlleonard/cchecker_backend.git`
+
+Install requirements
+
+`pip install -r requirements.txt`
+
+Change the Database to local database
+
+`DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}`
+
+Make migrations and migrate
+
+`python manage.py makemigrations`
+
+`python manage.py migrate`
+
+Start the server
+
+`python manage.py runserver`
+
+This start up the api server. In order to play the game, start the server in the frontend by following the instructions
+
 ## Features
 By using WebSocket and Djanog Channels, you could play the game with friends remotely
 
