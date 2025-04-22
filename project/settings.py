@@ -37,7 +37,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
-ROOT_URLCONF = "back.urls"
+ROOT_URLCONF = "project.urls"
 
 TEMPLATES = [
     {
@@ -55,8 +55,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "back.wsgi.application"
-ASGI_APPLICATION = "back.asgi.application"
+WSGI_APPLICATION = "project.wsgi.application"
+ASGI_APPLICATION = "project.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
